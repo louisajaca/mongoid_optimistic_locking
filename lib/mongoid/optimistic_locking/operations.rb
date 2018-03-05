@@ -14,8 +14,9 @@ module Mongoid
         set_lock_version_for_selector do
           increment_lock_version do
             result = super
-            getlasterror = mongo_session.command({:getlasterror => 1})
-            if result && !getlasterror['updatedExisting']
+            getlasterror = mongo_client.command({:getlasterror => 1, :w => 1})
+            affected = getlasterror.documents[0][:updatedExisting].nil? ? true : getlasterror.documents[0][:updatedExisting]
+            if result && !affected
               raise Mongoid::Errors::StaleDocument.new('update', self)
             end
             result
